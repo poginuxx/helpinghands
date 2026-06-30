@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id             Int             @id @default(autoincrement())
+  name           String
+  contactPerson  String?
+  phone          String?
+  address        String?
+  medicines      Medicine[]
+  purchaseOrders PurchaseOrder[]
+  createdAt      DateTime        @default(now())
+}
+
+model Medicine {
+  id               Int               @id @default(autoincrement())
+  name             String
+  brandName        String?
+  strength         String?
+  category         String?
+  supplierId       Int
+  supplier         Supplier          @relation(fields: [supplierId], references: [id])
+  unitCost         Float
+  sellingPrice     Float
+  stockQty         Int
+  expiryDate       DateTime?
+  reorderLevel     Int               @default(10)
+  needsReview      Boolean           @default(false)
+  transactionItems TransactionItem[]
+  purchaseItems    PurchaseItem[]
+  createdAt        DateTime          @default(now())
+}
+
+model Transaction {
+  id             Int               @id @default(autoincrement())
+  date           DateTime          @default(now())
+  items          TransactionItem[]
+  subtotal       Float
+  discountType   String?
+  discountAmount Float             @default(0)
+  totalAmount    Float
+  paymentMethod  String
+}
+
+model TransactionItem {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  medicineId    Int
+  medicine      Medicine    @relation(fields: [medicineId], references: [id])
+  quantity      Int
+  unitPrice     Float
+}
+
+model PurchaseOrder {
+  id          Int            @id @default(autoincrement())
+  supplierId  Int
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  date        DateTime       @default(now())
+  status      String         @default("PENDING")
+  totalAmount Float
+  items       PurchaseItem[]
+}
+
+model PurchaseItem {
+  id                Int           @id @default(autoincrement())
+  purchaseOrderId   Int
+  purchaseOrder     PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  medicineId        Int?
+  medicine          Medicine?     @relation(fields: [medicineId], references: [id])
+  medicineName      String?
+  medicineBrandName String?
+  medicineStrength  String?
+  quantity          Int
+  unitCost          Float
+}
